@@ -349,7 +349,8 @@
      Collections / CRUD
   --------------------------------*/
   function renderCollection(type,{fields}){
-    const plural = type+'s';
+    let plural = type+'s';
+    if(type==='category') plural = 'categories';
     view.innerHTML = `
       <section class="panel">
         <h2>${capitalize(plural)}</h2>
