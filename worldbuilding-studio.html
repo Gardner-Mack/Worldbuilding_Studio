@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Worldbuilding Studio</title>
+  <style>
+    :root{
+      --bg:#0f1220; --panel:#171a2b; --muted:#242a44; --text:#e7e9ff; --soft:#b9c0ff; --accent:#7aa2ff; --accent-2:#7fffd4;
+      --danger:#ff6b6b; --ok:#6bffb0; --warn:#ffd36b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,'Noto Sans',sans-serif;background:linear-gradient(180deg,#0b0e1a,#0f1220);color:var(--text)}
+    a{color:var(--accent)}
+    .app{display:grid;grid-template-columns:280px 1fr;grid-template-rows:auto 1fr;min-height:100vh}
+    header{grid-column:1/-1;display:flex;align-items:center;gap:.75rem;padding:1rem 1.25rem;background:linear-gradient(90deg,#11152a,#151a32 30%,#11152a);border-bottom:1px solid #232646;position:sticky;top:0;z-index:50}
+    header .logo{font-weight:800;letter-spacing:.3px}
+    header .logo small{display:block;font-weight:500;opacity:.7}
+    header input[type=search]{flex:1;max-width:720px;background:var(--panel);border:1px solid #2a2f53;border-radius:.75rem;padding:.65rem .9rem;color:var(--text)}
+    header .btn{background:var(--muted);border:1px solid #2b3158;border-radius:.65rem;color:var(--text);padding:.55rem .8rem;cursor:pointer}
+
+    nav{border-right:1px solid #232646;background:radial-gradient(1200px 600px at 50% -200px,#1a1f39,transparent 60%),var(--panel);padding:1rem .75rem}
+    .nav-group{margin:.5rem 0}
+    .nav-title{font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;color:#a8b1ff80;margin:.75rem .5rem}
+    .nav-item{display:flex;justify-content:space-between;align-items:center;padding:.55rem .65rem;border-radius:.6rem;color:var(--soft);cursor:pointer}
+    .nav-item:hover,.nav-item.active{background:#22284a}
+    .tag{font-size:.7rem;background:#22284a;border:1px solid #2f3560;border-radius:.5rem;padding:.1rem .45rem;color:#b9c0ff}
+
+    main{padding:1rem 1.25rem}
+    .toolbar{display:flex;gap:.5rem;flex-wrap:wrap;margin:.25rem 0 1rem}
+    .btn{background:linear-gradient(180deg,#242b4d,#1d2342);border:1px solid #343a6a;color:var(--text);padding:.55rem .8rem;border-radius:.65rem;cursor:pointer}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn.ghost{background:transparent;border-color:#2f3560}
+    .btn.ok{border-color:#2e6a50}
+    .btn.warn{border-color:#7a682e}
+    .btn.danger{border-color:#6a2e2e}
+
+    .grid{display:grid;gap:1rem}
+    .grid.cols-2{grid-template-columns:1.2fr .8fr}
+    .panel{background:linear-gradient(180deg,#141832,#10152c);border:1px solid #232a54;border-radius:1rem;box-shadow:0 10px 30px #00000040;overflow:hidden}
+    .panel h2{font-size:1rem;margin:.75rem 1rem;color:#cfd6ff}
+    .panel .content{padding:0 1rem 1rem}
+
+    .list{display:grid}
+    .item{padding:.75rem;border-top:1px solid #232a54;display:grid;grid-template-columns:1fr auto;gap:.5rem}
+    .item:first-child{border-top:none}
+    .item h3{margin:.1rem 0 .2rem;font-size:1rem}
+    .item .meta{font-size:.8rem;opacity:.7}
+
+    .field{display:grid;gap:.4rem;margin:.6rem 0}
+    .field label{font-size:.85rem;color:#c4cbff}
+    .field input,.field textarea,.field select{background:#121633;border:1px solid #2a2f53;border-radius:.6rem;color:var(--text);padding:.6rem}
+    textarea{min-height:140px;resize:vertical}
+
+    .tabs{display:flex;gap:.4rem;border-bottom:1px solid #232a54;margin:0 1rem}
+    .tabs button{border:none;background:transparent;color:#9fa8ff;padding:.8rem .9rem;cursor:pointer;border-bottom:2px solid transparent}
+    .tabs button.active{color:#e7e9ff;border-color:var(--accent)}
+
+    .editor{display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1rem}
+    .editor .pane{border:1px solid #232a54;border-radius:.75rem;overflow:hidden}
+    .editor .pane header{position:static;background:#171a2b;border-bottom:1px solid #232a54}
+    .editor .pane .body{padding:1rem}
+    .preview{background:#0e1130;min-height:200px}
+
+    .pill{display:inline-flex;gap:.35rem;align-items:center;background:#22284a;border:1px solid #2f3560;border-radius:999px;padding:.25rem .6rem;font-size:.8rem}
+    .pill input{background:transparent;border:none;color:inherit;min-width:6ch}
+
+    .notice{background:#142a20;border:1px solid #245a44;color:#caffe2;padding:.65rem .8rem;border-radius:.6rem}
+    .danger-box{background:#2a1414;border:1px solid #5a2424;color:#ffd0d0;padding:.65rem .8rem;border-radius:.6rem}
+
+    .footer{opacity:.65;font-size:.85rem;margin-top:2rem;text-align:center}
+
+    /* Map */
+    .map-wrap{position:relative;isolation:isolate;border:1px solid #232a54;border-radius:.75rem;overflow:hidden}
+    .map-wrap img{display:block;width:100%;height:auto}
+    .marker{position:absolute;transform:translate(-50%,-100%);background:var(--accent);border:2px solid #0b0e1a;border-radius:50% 50% 50% 0;width:18px;height:18px;rotate:-45deg;cursor:pointer;box-shadow:0 3px 10px #0008}
+    .marker::after{content:"";position:absolute;inset:4px;border-radius:50%;background:#0b0e1a}
+    .marker:hover{filter:brightness(1.2)}
+    .marker .tip{position:absolute;left:50%;bottom:120%;transform:translateX(-50%);background:#171a2b;border:1px solid #2a2f53;border-radius:.5rem;padding:.35rem .5rem;white-space:nowrap;box-shadow:0 6px 18px #0007;display:none}
+    .marker:hover .tip{display:block}
+
+    /* Modal */
+    dialog{border:none;border-radius:1rem;padding:0;background:#131833;color:var(--text);box-shadow:0 30px 80px #0008}
+    dialog::backdrop{background:#0009}
+    .modal{min-width:min(680px,95vw)}
+    .modal header{background:#171a2b;border-bottom:1px solid #232a54}
+    .modal .body{padding:1rem}
+
+    @media (max-width: 980px){
+      .app{grid-template-columns:1fr}
+      nav{order:2}
+      .editor{grid-template-columns:1fr}
+      header input[type=search]{display:none}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">
+        <div style="font-size:1.05rem">Worldbuilding Studio</div>
+        <small>Single-file, offline-first notebook for your worlds</small>
+      </div>
+      <input id="globalSearch" type="search" placeholder="Search titles, content, tags… (⌘/Ctrl + K)" />
+      <button class="btn" id="newBtn">New</button>
+      <button class="btn ghost" id="exportBtn" title="Export JSON">Export</button>
+      <button class="btn ghost" id="importBtn" title="Import JSON">Import</button>
+      <button class="btn ghost" id="backupBtn" title="Download backup file">Backup</button>
+      <button class="btn ghost" id="clearBtn" title="Danger: wipe local data">Reset</button>
+    </header>
+
+    <nav>
+      <div class="nav-group">
+        <div class="nav-title">Library</div>
+        <div class="nav-item active" data-view="dashboard"><span>Dashboard</span></div>
+        <div class="nav-item" data-view="articles"><span>Articles</span><span class="tag" id="count-articles">0</span></div>
+        <div class="nav-item" data-view="categories"><span>Categories</span><span class="tag" id="count-categories">0</span></div>
+        <div class="nav-item" data-view="timelines"><span>Timelines</span><span class="tag" id="count-timelines">0</span></div>
+        <div class="nav-item" data-view="characters"><span>Characters</span><span class="tag" id="count-characters">0</span></div>
+        <div class="nav-item" data-view="organizations"><span>Organizations</span><span class="tag" id="count-organizations">0</span></div>
+        <div class="nav-item" data-view="maps"><span>Maps</span><span class="tag" id="count-maps">0</span></div>
+        <div class="nav-item" data-view="notes"><span>Notes</span><span class="tag" id="count-notes">0</span></div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-title">Utilities</div>
+        <div class="nav-item" data-view="relations"><span>Relations Graph</span></div>
+        <div class="nav-item" data-view="settings"><span>Settings</span></div>
+        <div class="nav-item" data-view="about"><span>About</span></div>
+      </div>
+    </nav>
+
+    <main id="view"></main>
+  </div>
+
+  <dialog id="entityModal" class="modal">
+    <header>
+      <div style="padding: .8rem 1rem; font-weight:700">Edit</div>
+    </header>
+    <div class="body">
+      <form id="entityForm"></form>
+      <div style="display:flex;gap:.5rem;justify-content:flex-end;padding:0 0 1rem 0">
+        <button class="btn ghost" id="cancelModal">Cancel</button>
+        <button class="btn ok" id="saveModal" type="submit" form="entityForm">Save</button>
+      </div>
+    </div>
+  </dialog>
+
+  <input id="filePicker" type="file" accept="application/json,image/*" style="display:none" />
+
+  <script>
+  /* -------------------------------
+     Minimal client-side framework
+  --------------------------------*/
+  const $ = (sel,root=document)=>root.querySelector(sel);
+  const $$ = (sel,root=document)=>Array.from(root.querySelectorAll(sel));
+  const uid = ()=>'id-'+Math.random().toString(36).slice(2,9)+'-'+Date.now().toString(36);
+  const nowISO = ()=>new Date().toISOString();
+
+  const DB_KEY = 'wbs.data.v1';
+  const DEFAULT_STATE = {
+    meta:{title:'My World', created: nowISO(), updated: nowISO(), theme:'dark'},
+    types:['article','category','timeline','character','organization','map','note'],
+    items:[],
+    relations:[], // {id,aId,bId,type,note}
+    settings:{
+      autosave:true,
+      markdownPreview:true
+    }
+  };
+
+  function loadState(){
+    try{ return JSON.parse(localStorage.getItem(DB_KEY)) || structuredClone(DEFAULT_STATE);}catch(e){return structuredClone(DEFAULT_STATE)}
+  }
+  function saveState(){ state.meta.updated = nowISO(); localStorage.setItem(DB_KEY, JSON.stringify(state)); updateCounts(); }
+  function resetState(){ localStorage.removeItem(DB_KEY); state = structuredClone(DEFAULT_STATE); route('dashboard'); updateCounts(); }
+
+  let state = loadState();
+
+  /* -------------------------------
+     Routing / Views
+  --------------------------------*/
+  const view = $('#view');
+  const routes = {
+    dashboard(){
+      view.innerHTML = `
+        <div class="grid cols-2">
+          <section class="panel">
+            <h2>Quick Start</h2>
+            <div class="content">
+              <div class="toolbar">
+                <button class="btn" data-new="article">New Article</button>
+                <button class="btn" data-new="character">New Character</button>
+                <button class="btn" data-new="map">New Map</button>
+                <button class="btn ghost" id="importQuick">Import JSON</button>
+              </div>
+              <p>Use this lightweight, offline-first studio to plan your worlds. Everything saves to your browser. Export anytime as JSON.</p>
+              <div class="notice">Tip: Press <b>⌘/Ctrl + K</b> to open global search.</div>
+            </div>
+          </section>
+          <section class="panel">
+            <h2>Recent Items</h2>
+            <div class="content list" id="recentList"></div>
+          </section>
+          <section class="panel" style="grid-column:1/-1">
+            <h2>Stats</h2>
+            <div class="content">
+              <div class="pill">Articles <span class="tag" id="stat-articles">0</span></div>
+              <div class="pill">Characters <span class="tag" id="stat-characters">0</span></div>
+              <div class="pill">Maps <span class="tag" id="stat-maps">0</span></div>
+            </div>
+          </section>
+        </div>`;
+
+      $('#importQuick').onclick = ()=>$('#importBtn').click();
+      // Add event listeners for Quick Start buttons
+      $('[data-new="article"]').onclick = ()=> openEntityModal('article');
+      $('[data-new="character"]').onclick = ()=> openEntityModal('character');
+      $('[data-new="map"]').onclick = ()=> openEntityModal('map');
+      $$('#recentList')[0].append(...state.items
+        .slice().sort((a,b)=>b.updated.localeCompare(a.updated)).slice(0,8)
+        .map(renderListItem));
+      ['articles','characters','maps'].forEach(k=>{
+        const count = state.items.filter(i=>i.type.slice(0,-1)===k.slice(0,-1)).length;
+        $('#stat-'+k).textContent = count;
+      })
+    },
+    articles(){ renderCollection('article',{fields:['title','category','tags','summary','content']}); },
+    categories(){ renderCollection('category',{fields:['name','description']}); },
+    timelines(){ renderCollection('timeline',{fields:['name','era','events']}); },
+    characters(){ renderCollection('character',{fields:['name','role','summary','content']}); },
+    organizations(){ renderCollection('organization',{fields:['name','summary','content']}); },
+    notes(){ renderCollection('note',{fields:['title','content']}); },
+    maps(){
+      view.innerHTML = `
+        <section class="panel">
+          <h2>Maps</h2>
+          <div class="content">
+            <div class="toolbar">
+              <button class="btn" id="addMap">New Map</button>
+            </div>
+            <div id="mapsWrap" class="grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem"></div>
+          </div>
+        </section>`;
+      $('#addMap').onclick = ()=> openEntityModal('map');
+      const wrap = $('#mapsWrap');
+      state.items.filter(i=>i.type==='map').forEach(map=>{
+        const card = document.createElement('div');
+        card.className='panel';
+        card.innerHTML = `
+          <h2>${escapeHtml(map.name||'Untitled Map')}</h2>
+          <div class="content">
+            <div class="map-wrap" data-id="${map.id}" style="aspect-ratio: 4/3; background:#0b0e1a;display:grid;place-items:center;">
+              ${map.image?`<img src="${map.image}" alt="map"/>`:`<div>
+                <p>No image yet.</p>
+                <div class="toolbar"><button class="btn ghost" data-upload>Upload Image</button></div>
+              </div>`}
+            </div>
+            <div class="toolbar">
+              <button class="btn" data-open="${map.id}">Open</button>
+              <button class="btn ghost" data-edit="${map.id}">Edit</button>
+              <button class="btn danger" data-del="${map.id}">Delete</button>
+            </div>
+          </div>`;
+        wrap.append(card);
+        $('[data-upload]',card)?.addEventListener('click',()=>pickImage().then(src=>{map.image=src; map.updated=nowISO(); saveState(); routes.maps();}));
+        $('[data-open]',card).onclick = ()=> openMap(map.id);
+        $('[data-edit]',card).onclick = ()=> openEntityModal('map',map);
+        $('[data-del]',card).onclick = ()=> delItem(map.id);
+      });
+    },
+    relations(){
+      view.innerHTML = `
+        <section class="panel">
+          <h2>Relations Graph</h2>
+          <div class="content">
+            <p>Create links between any two items. The simple graph below is interactive.</p>
+            <div class="field"><label>New Relation</label>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.5rem">
+                <select id="relA"></select>
+                <select id="relType">
+                  <option value="knows">knows</option>
+                  <option value="part-of">part-of</option>
+                  <option value="leads">leads</option>
+                  <option value="ally">ally</option>
+                  <option value="enemy">enemy</option>
+                </select>
+                <select id="relB"></select>
+                <button class="btn" id="addRel">Add</button>
+              </div>
+            </div>
+            <div id="graph" style="height:420px;border:1px solid #232a54;border-radius:.75rem;position:relative;overflow:hidden;background:radial-gradient(600px 300px at 50% -50px,#0f163a,#0b0e1a)"></div>
+          </div>
+        </section>`;
+      const opts = state.items.filter(i=>i.type!=='map').map(i=>`<option value="${i.id}">${escapeHtml(iconFor(i.type)+' '+(i.title||i.name||'Untitled'))}</option>`).join('');
+      $('#relA').innerHTML = opts; $('#relB').innerHTML = opts;
+      $('#addRel').onclick = ()=>{ const r={id:uid(), aId:$('#relA').value, bId:$('#relB').value, type:$('#relType').value, note:''}; state.relations.push(r); saveState(); drawGraph(); };
+      drawGraph();
+      function drawGraph(){
+        const el = $('#graph'); el.innerHTML='';
+        const nodes = state.items.map(i=>({id:i.id,label:(i.title||i.name||'Untitled'),type:i.type,x:Math.random()*el.clientWidth,y:Math.random()*el.clientHeight}));
+        const edges = state.relations.map(r=>({a:r.aId,b:r.bId,type:r.type}));
+        // draw edges
+        const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+        svg.setAttribute('width','100%'); svg.setAttribute('height','100%'); svg.style.position='absolute'; svg.style.inset='0'; svg.style.pointerEvents='none';
+        el.append(svg);
+        // draw nodes
+        nodes.forEach(n=>{
+          const node = document.createElement('div'); node.className='pill'; node.style.position='absolute'; node.style.left=n.x+'px'; node.style.top=n.y+'px'; node.style.cursor='grab'; node.textContent=iconFor(n.type)+' '+n.label; el.append(node);
+          node.onmousedown = (e)=>{node.style.cursor='grabbing'; const sx=e.clientX, sy=e.clientY, ox=n.x, oy=n.y; const mm=(ev)=>{n.x=ox+(ev.clientX-sx); n.y=oy+(ev.clientY-sy); node.style.left=n.x+'px'; node.style.top=n.y+'px'; redrawEdges()}; const mu=()=>{node.style.cursor='grab'; window.removeEventListener('mousemove',mm); window.removeEventListener('mouseup',mu)}; window.addEventListener('mousemove',mm); window.addEventListener('mouseup',mu)};
+        });
+        function redrawEdges(){ svg.innerHTML=''; edges.forEach(e=>{ const a=nodes.find(n=>n.id===e.a), b=nodes.find(n=>n.id===e.b); if(!a||!b) return; const line=document.createElementNS('http://www.w3.org/2000/svg','line'); line.setAttribute('x1',a.x); line.setAttribute('y1',a.y); line.setAttribute('x2',b.x); line.setAttribute('y2',b.y); line.setAttribute('stroke','#2f3560'); line.setAttribute('stroke-width','2'); svg.append(line);
+          const midX=(a.x+b.x)/2, midY=(a.y+b.y)/2; const text=document.createElementNS('http://www.w3.org/2000/svg','text'); text.setAttribute('x',midX+6); text.setAttribute('y',midY-6); text.setAttribute('fill','#aeb6ff'); text.setAttribute('font-size','12'); text.textContent=e.type; svg.append(text);
+        })}
+        redrawEdges();
+      }
+    },
+    settings(){
+      view.innerHTML = `
+        <section class="panel">
+          <h2>Settings</h2>
+          <div class="content" id="settings"></div>
+        </section>`;
+      const wrap = $('#settings');
+      wrap.append(
+        fieldToggle('Autosave to browser', 'autosave', state.settings.autosave, v=>{state.settings.autosave=v; saveState();}),
+        fieldToggle('Live Markdown preview', 'markdownPreview', state.settings.markdownPreview, v=>{state.settings.markdownPreview=v; saveState();})
+      );
+    },
+    about(){
+      view.innerHTML = `
+        <section class="panel">
+          <h2>About This File</h2>
+          <div class="content">
+            <p><b>Worldbuilding Studio</b> is a single‑file, browser‑only app that imitates common worldbuilding workflows—articles, categories, characters, maps, timelines, search, and a light relations graph. It stores everything in <code>localStorage</code>. No servers, sign‑ups, or tracking.</p>
+            <p>It is <i>not</i> affiliated with or a substitute for any commercial service. You can export/import JSON to move data elsewhere.</p>
+            <p>Made to be hackable: open the source (this file) and tweak away.</p>
+          </div>
+        </section>`;
+    }
+  };
+
+  function route(name){
+    $$('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===name));
+    (routes[name]||routes.dashboard)();
+  }
+
+  /* -------------------------------
+     Collections / CRUD
+  --------------------------------*/
+  function renderCollection(type,{fields}){
+    const plural = type+'s';
+    view.innerHTML = `
+      <section class="panel">
+        <h2>${capitalize(plural)}</h2>
+        <div class="content">
+          <div class="toolbar">
+            <button class="btn" data-add>New ${capitalize(type)}</button>
+            <button class="btn ghost" data-export>Export ${capitalize(plural)}</button>
+          </div>
+          <div class="field"><input id="filter" placeholder="Filter…" /></div>
+          <div id="list" class="list"></div>
+        </div>
+      </section>`;
+
+    const listEl = $('#list');
+    const filterEl = $('#filter');
+
+    function refresh(){
+      listEl.innerHTML='';
+      const q = filterEl.value?.toLowerCase()||'';
+      state.items.filter(i=>i.type===type && matchQuery(i,q)).forEach(i=>listEl.append(renderListItem(i)));
+    }
+
+    $('[data-add]').onclick = ()=> openEntityModal(type);
+    $('[data-export]').onclick = ()=> downloadJSON(`${plural}.json`, JSON.stringify(state.items.filter(i=>i.type===type),null,2));
+    filterEl.oninput = refresh;
+    refresh();
+  }
+
+  function renderListItem(i){
+    const el = document.createElement('div');
+    el.className='item';
+    const title = escapeHtml(i.title||i.name||'Untitled');
+    const cat = escapeHtml((i.categoryName||'').toString());
+    el.innerHTML = `
+      <div>
+        <h3>${iconFor(i.type)} ${title}</h3>
+        <div class="meta">${i.type}${cat? ' • '+cat:''} • Updated ${new Date(i.updated||i.created).toLocaleString()}</div>
+      </div>
+      <div class="toolbar">
+        <button class="btn ghost" data-open>Open</button>
+        <button class="btn" data-edit>Edit</button>
+        <button class="btn danger" data-del>Delete</button>
+      </div>`;
+    $('[data-open]',el).onclick = ()=> openReader(i.id);
+    $('[data-edit]',el).onclick = ()=> openEntityModal(i.type,i);
+    $('[data-del]',el).onclick = ()=> delItem(i.id);
+    return el;
+  }
+
+  function openReader(id){
+    const i = state.items.find(x=>x.id===id); if(!i) return;
+    view.innerHTML = `
+      <section class="panel">
+        <div class="tabs">
+          <button class="active">Read</button>
+          <button id="editBtn">Edit</button>
+        </div>
+        <div class="content" style="padding:0">
+          <div class="editor">
+            <div class="pane preview">
+              <header><div style="padding:.8rem 1rem"><b>${escapeHtml(i.title||i.name||'Untitled')}</b></div></header>
+              <div class="body" id="reader"></div>
+            </div>
+            <div class="pane">
+              <header><div style="padding:.8rem 1rem">Details</div></header>
+              <div class="body" id="meta"></div>
+            </div>
+          </div>
+        </div>
+      </section>`;
+    $('#reader').innerHTML = renderMarkdown(i.content||i.summary||'');
+    $('#meta').innerHTML = `<div class="field"><label>Type</label><div class="pill">${i.type}</div></div>
+      ${(i.tags?.length?`<div class="field"><label>Tags</label><div>${i.tags.map(t=>`<span class='pill'>#${escapeHtml(t)}</span>`).join(' ')}</div></div>`:'')}
+      <div class="field"><label>Updated</label><div>${new Date(i.updated||i.created).toLocaleString()}</div></div>`;
+    $('#editBtn').onclick = ()=> openEntityModal(i.type,i);
+  }
+
+  function openEntityModal(type, data){
+    const isEdit = !!data; const id = data?.id || uid();
+    const form = $('#entityForm');
+    form.innerHTML='';
+    function addField(key,label,el){ const wrap=document.createElement('div'); wrap.className='field'; wrap.append(Object.assign(document.createElement('label'),{textContent:label})); wrap.append(el); form.append(wrap); return el; }
+
+    // Common fields
+    let titleEl;
+    if(type==='article'||type==='note'){ titleEl = addField('title','Title', input(data?.title||'')); }
+    if(type==='character'||type==='organization'){ titleEl = addField('name','Name', input(data?.name||'')); }
+    if(type==='category'){ titleEl = addField('name','Name', input(data?.name||'')); }
+    if(type==='timeline'){ titleEl = addField('name','Name', input(data?.name||'')); }
+    if(type==='map'){ titleEl = addField('name','Name', input(data?.name||'')); }
+
+    let categoryEl, tagsEl;
+    if(type==='article'){
+      const cats = state.items.filter(i=>i.type==='category');
+      categoryEl = addField('category','Category', select(cats.map(c=>({value:c.id,label:c.name||'Untitled'})), data?.categoryId||''));
+      tagsEl = addField('tags','Tags (comma‑separated)', input((data?.tags||[]).join(', ')));
+    }
+
+    let summaryEl, contentEl;
+    if(['article','character','organization','note'].includes(type)){
+      summaryEl = addField('summary','Summary (optional)', textarea(data?.summary||''));
+      contentEl = addField('content','Content (Markdown)', textarea(data?.content||''));
+      const previewBox = Object.assign(document.createElement('div'),{className:'field'});
+      const prev = Object.assign(document.createElement('div'),{className:'panel preview'});
+      prev.innerHTML = `<header><div style="padding:.8rem 1rem">Live Preview</div></header><div class="body" id="mdPrev"></div>`;
+      previewBox.append(prev); form.append(previewBox);
+      const updPrev = ()=>{ if(state.settings.markdownPreview){ $('#mdPrev').innerHTML = renderMarkdown(contentEl.value); }};
+      contentEl.addEventListener('input', updPrev); updPrev();
+    }
+
+    if(type==='category'){
+      summaryEl = addField('description','Description', textarea(data?.description||''));
+    }
+
+    if(type==='timeline'){
+      summaryEl = addField('era','Era / Scope', input(data?.era||''));
+      const eventsEl = addField('events','Events (one per line: YYYY-MM-DD - Title)', textarea(data?.events||''));
+    }
+
+    if(type==='map'){
+      const imgWrap = document.createElement('div'); imgWrap.className='field';
+      imgWrap.innerHTML = `<label>Image</label><div class="toolbar"><button class="btn ghost" id="pickImg">${data?.image?'Replace':'Upload'} Image</button></div>`;
+      form.append(imgWrap);
+      $('#pickImg').onclick = ()=> pickImage().then(src=>{ data={...(data||{}), image:src}; openEntityModal(type,data); });
+      if(data?.image){ const mw=document.createElement('div'); mw.className='map-wrap'; mw.style.maxHeight='50vh'; mw.style.overflow='auto'; mw.innerHTML=`<img src="${data.image}" alt="map"/>`; form.append(mw); }
+    }
+
+    const modal = $('#entityModal');
+    modal.showModal();
+
+    $('#cancelModal').onclick = ()=> modal.close();
+    $('#entityForm').onsubmit = (e)=>{
+      e.preventDefault();
+      let item = data || {id, type, created: nowISO()};
+      // collect
+      if(titleEl){ item.title = titleEl.value || item.title; item.name = item.title||item.name; }
+      if(type==='character' || type==='organization' || type==='category' || type==='timeline' || type==='map'){ item.name = titleEl.value || item.name; }
+      if(categoryEl){ item.categoryId = categoryEl.value; item.categoryName = state.items.find(x=>x.id===item.categoryId)?.name || ''; }
+      if(tagsEl){ item.tags = tagsEl.value.split(',').map(s=>s.trim()).filter(Boolean); }
+      if(summaryEl){ item.summary = summaryEl.value; }
+      if(contentEl){ item.content = contentEl.value; }
+      if(type==='timeline'){ item.events = $('#entityForm textarea').value; }
+      if(type==='map' && data?.image){ item.image = data.image; item.markers = data.markers||[]; }
+
+      item.updated = nowISO();
+      if(isEdit){
+        const idx = state.items.findIndex(x=>x.id===item.id);
+        if(idx>-1) state.items[idx]=item;
+      }else{
+        state.items.push(item);
+      }
+      saveState(); modal.close();
+      route(type==='map'?'maps':type+'s');
+    }
+  }
+
+  function openMap(id){
+    const map = state.items.find(i=>i.id===id); if(!map) return;
+    view.innerHTML = `
+      <section class="panel">
+        <h2>${escapeHtml(map.name||'Untitled Map')}</h2>
+        <div class="content">
+          <div class="toolbar">
+            <button class="btn ghost" id="backMaps">Back</button>
+            <button class="btn" id="addPin">Add Marker</button>
+            <button class="btn ghost" id="editMap">Edit Details</button>
+          </div>
+          <div class="map-wrap" id="mapStage"></div>
+          <div class="toolbar" style="margin-top:1rem">
+            <button class="btn danger" id="delMap">Delete Map</button>
+          </div>
+        </div>
+      </section>`;
+    $('#backMaps').onclick = ()=> route('maps');
+    $('#editMap').onclick = ()=> openEntityModal('map',map);
+    $('#delMap').onclick = ()=> delItem(map.id);
+
+    const stage = $('#mapStage');
+    if(map.image){ stage.innerHTML = `<img src="${map.image}"/>`; } else { stage.innerHTML = '<div class="danger-box">No image set for this map.</div>'; }
+
+    (map.markers||[]).forEach(m=> addMarkerEl(stage,m));
+
+    $('#addPin').onclick = ()=>{
+      if(!map.image) return alert('Upload an image first.');
+      const onClick = (e)=>{
+        const r = stage.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width; const y = (e.clientY - r.top) / r.height;
+        const m = {id:uid(), x, y, title:'Marker', note:''};
+        map.markers = map.markers||[]; map.markers.push(m); saveState(); addMarkerEl(stage,m); stage.removeEventListener('click',onClick);
+      };
+      stage.addEventListener('click',onClick);
+      alert('Click on the map to place the marker.');
+    };
+
+    function addMarkerEl(parent,m){
+      const el=document.createElement('div'); el.className='marker'; el.style.left=(m.x*100)+'%'; el.style.top=(m.y*100)+'%'; el.dataset.id=m.id;
+      el.innerHTML = `<div class="tip"><b>${escapeHtml(m.title)}</b>${m.note? ' — '+escapeHtml(m.note):''}</div>`;
+      parent.append(el);
+      el.onclick = (ev)=>{ ev.stopPropagation(); const title=prompt('Title',m.title||''); if(title===null) return; const note=prompt('Note',m.note||''); m.title=title; m.note=note||''; saveState(); route('maps'); openMap(parent.closest('[data-id]')? parent.closest('[data-id]').dataset.id : id); };
+    }
+  }
+
+  function delItem(id){ if(!confirm('Delete this item?')) return; state.items = state.items.filter(i=>i.id!==id); saveState(); route($('.nav-item.active')?.dataset.view || 'dashboard'); }
+
+  /* -------------------------------
+     Search & helpers
+  --------------------------------*/
+  function matchQuery(i,q){ if(!q) return true; const t=(s)=> (s||'').toString().toLowerCase(); return [i.title,i.name,i.summary,i.content,(i.tags||[]).join(' '),(i.categoryName||'')].some(x=>t(x).includes(q)); }
+  function updateCounts(){ const byType={}; state.items.forEach(i=>{byType[i.type]=(byType[i.type]||0)+1}); ['articles','categories','timelines','characters','organizations','maps','notes'].forEach(k=>{ $('#count-'+k).textContent = byType[k.slice(0,-1)]||0; }); }
+  function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+  function input(v=''){ const el=document.createElement('input'); el.value=v; return el; }
+  function textarea(v=''){ const el=document.createElement('textarea'); el.value=v; return el; }
+  function select(opts, val=''){ const el=document.createElement('select'); el.innerHTML = `<option value="">—</option>` + opts.map(o=>`<option value="${o.value}">${escapeHtml(o.label)}</option>`).join(''); el.value=val; return el; }
+  function fieldToggle(label,key,val,cb){ const wrap=document.createElement('div'); wrap.className='field'; wrap.innerHTML = `<label>${label}</label><label class="pill"><input type="checkbox" ${val?'checked':''}/> ${val?'On':'Off'}</label>`; const input=$('input',wrap); input.onchange=()=>{ cb(input.checked); $('label.pill',wrap).lastChild.textContent = input.checked?'On':'Off'; }; return wrap; }
+  function iconFor(type){ return ({article:'📜',character:'🧙',organization:'🏛️',category:'🗂️',timeline:'⏳',map:'🗺️',note:'📝'})[type]||'📦'; }
+  function escapeHtml(str=''){ return str.replace(/[&<>'"]/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
+
+  // Tiny Markdown renderer (headings, bold/italic/code, lists, links)
+  function renderMarkdown(md=''){
+    const esc = (s)=>s.replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
+    md = md.replace(/\r\n/g,'\n');
+    const lines = md.split('\n');
+    let html = '', inList=false, inCode=false;
+    for(const raw of lines){
+      let line = raw;
+      if(/^```/.test(line)){ inCode=!inCode; html += inCode? '<pre><code>' : '</code></pre>'; continue; }
+      if(inCode){ html += esc(line)+'\n'; continue; }
+      if(/^\s*-\s+/.test(line)){ if(!inList){ html+='<ul>'; inList=true; } html += '<li>'+inline(line.replace(/^\s*-\s+/,''))+'</li>'; continue; }
+      if(inList){ html+='</ul>'; inList=false; }
+      const m = line.match(/^(#{1,6})\s+(.*)$/); if(m){ html += `<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`; continue; }
+      if(line.trim()===''){ html+='<br/>'; } else { html += `<p>${inline(line)}</p>`; }
+    }
+    if(inList) html+='</ul>';
+    return html;
+    function inline(s){
+      return s
+        .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
+        .replace(/\*(.+?)\*/g,'<i>$1</i>')
+        .replace(/`([^`]+?)`/g,'<code>$1</code>')
+        .replace(/\[(.+?)\]\((.+?)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+    }
+  }
+
+  /* -------------------------------
+     Import/Export/Backup
+  --------------------------------*/
+  function pickImage(){ return new Promise((res,rej)=>{ const fp=$('#filePicker'); fp.accept='image/*'; fp.onchange=()=>{ const f=fp.files[0]; if(!f) return rej('no file'); const reader=new FileReader(); reader.onload=()=>res(reader.result); reader.readAsDataURL(f); fp.value=''; }; fp.click(); }); }
+  function chooseFile(){ return new Promise((res,rej)=>{ const fp=$('#filePicker'); fp.accept='application/json'; fp.onchange=()=>{ const f=fp.files[0]; if(!f) return rej('no file'); const reader=new FileReader(); reader.onload=()=>res(reader.result); reader.readAsText(f); fp.value=''; }; fp.click(); }); }
+  function downloadJSON(filename, text){ const a=document.createElement('a'); a.href='data:application/json;charset=utf-8,'+encodeURIComponent(text); a.download=filename; a.click(); }
+
+  // Header controls
+  $('#newBtn').onclick = ()=> openEntityModal('article');
+  $('#exportBtn').onclick = ()=> downloadJSON('worldbuilding-studio.json', JSON.stringify(state,null,2));
+  $('#importBtn').onclick = async ()=>{ try{ const json=await chooseFile(); const data=JSON.parse(json); if(!confirm('Import will replace current data. Continue?')) return; state=data; saveState(); route('dashboard'); }catch(e){ alert('Import failed: '+e.message||e); } };
+  $('#backupBtn').onclick = ()=> downloadJSON(`wbs-backup-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(state));
+  $('#clearBtn').onclick = ()=>{ if(confirm('This will erase all data stored in this browser for this app. Continue?')){ resetState(); }}
+
+  // Global search
+  $('#globalSearch').addEventListener('input', (e)=>{ const q=e.target.value.toLowerCase(); const results=state.items.filter(i=>matchQuery(i,q)).slice(0,20); const list = document.createElement('div'); list.className='panel'; list.innerHTML='<h2>Search Results</h2><div class="content list" id="slist"></div>'; view.innerHTML=''; view.append(list); const slist=$('#slist'); results.forEach(i=>slist.append(renderListItem(i))); });
+  window.addEventListener('keydown', (e)=>{ if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); $('#globalSearch').focus(); } });
+
+  // Nav
+  $$('.nav-item').forEach(el=> el.addEventListener('click',()=> route(el.dataset.view)) );
+
+  // Boot
+  updateCounts();
+  route('dashboard');
+
+  </script>
+</body>
+</html>
